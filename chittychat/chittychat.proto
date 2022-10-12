@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package chittychat;
+
+option go_package = "https://github.com/JonasUJ/dsys-hw3;chittychat";
+
+service MessageController {
+    rpc sendMessage (Messagepost) returns (MessagePostReply) {}
+}
+
+message MessagePost {
+    string content = 1;
+}
+
+message MessagePostReply {
+    string reply = 1; 
+}
