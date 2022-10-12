@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package chittychat;
 
-option go_package = "https://github.com/JonasUJ/dsys-hw3;chittychat";
+option go_package = "https://github.com/JonasUJ/dsys-hw3/chittychat;chittychat";
 
 service MessageController {
-    rpc sendMessage (Messagepost) returns (MessagePostReply) {}
+    rpc sendMessage (MessagePost) returns (MessagePostReply) {}
 }
 
 message MessagePost {
