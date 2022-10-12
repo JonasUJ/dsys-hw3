@@ -4,8 +4,8 @@ package chittychat;
 
 option go_package = "https://github.com/JonasUJ/dsys-hw3/chittychat;chittychat";
 
-service MessageController {
-    rpc sendMessage (MessagePost) returns (MessagePostReply) {}
+service ChatService {
+    rpc SendMessage (MessagePost) returns (MessagePostReply) {}
 }
 
 message MessagePost {

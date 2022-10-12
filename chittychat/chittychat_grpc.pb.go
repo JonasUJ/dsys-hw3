@@ -18,86 +18,86 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// MessageControllerClient is the client API for MessageController service.
+// ChatServiceClient is the client API for ChatService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type MessageControllerClient interface {
+type ChatServiceClient interface {
 	SendMessage(ctx context.Context, in *MessagePost, opts ...grpc.CallOption) (*MessagePostReply, error)
 }
 
-type messageControllerClient struct {
+type chatServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewMessageControllerClient(cc grpc.ClientConnInterface) MessageControllerClient {
-	return &messageControllerClient{cc}
+func NewChatServiceClient(cc grpc.ClientConnInterface) ChatServiceClient {
+	return &chatServiceClient{cc}
 }
 
-func (c *messageControllerClient) SendMessage(ctx context.Context, in *MessagePost, opts ...grpc.CallOption) (*MessagePostReply, error) {
+func (c *chatServiceClient) SendMessage(ctx context.Context, in *MessagePost, opts ...grpc.CallOption) (*MessagePostReply, error) {
 	out := new(MessagePostReply)
-	err := c.cc.Invoke(ctx, "/chittychat.MessageController/sendMessage", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chittychat.ChatService/SendMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// MessageControllerServer is the server API for MessageController service.
-// All implementations must embed UnimplementedMessageControllerServer
+// ChatServiceServer is the server API for ChatService service.
+// All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility
-type MessageControllerServer interface {
+type ChatServiceServer interface {
 	SendMessage(context.Context, *MessagePost) (*MessagePostReply, error)
-	mustEmbedUnimplementedMessageControllerServer()
+	mustEmbedUnimplementedChatServiceServer()
 }
 
-// UnimplementedMessageControllerServer must be embedded to have forward compatible implementations.
-type UnimplementedMessageControllerServer struct {
+// UnimplementedChatServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedChatServiceServer struct {
 }
 
-func (UnimplementedMessageControllerServer) SendMessage(context.Context, *MessagePost) (*MessagePostReply, error) {
+func (UnimplementedChatServiceServer) SendMessage(context.Context, *MessagePost) (*MessagePostReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
 }
-func (UnimplementedMessageControllerServer) mustEmbedUnimplementedMessageControllerServer() {}
+func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
-// UnsafeMessageControllerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to MessageControllerServer will
+// UnsafeChatServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ChatServiceServer will
 // result in compilation errors.
-type UnsafeMessageControllerServer interface {
-	mustEmbedUnimplementedMessageControllerServer()
+type UnsafeChatServiceServer interface {
+	mustEmbedUnimplementedChatServiceServer()
 }
 
-func RegisterMessageControllerServer(s grpc.ServiceRegistrar, srv MessageControllerServer) {
-	s.RegisterService(&MessageController_ServiceDesc, srv)
+func RegisterChatServiceServer(s grpc.ServiceRegistrar, srv ChatServiceServer) {
+	s.RegisterService(&ChatService_ServiceDesc, srv)
 }
 
-func _MessageController_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ChatService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MessagePost)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MessageControllerServer).SendMessage(ctx, in)
+		return srv.(ChatServiceServer).SendMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/chittychat.MessageController/sendMessage",
+		FullMethod: "/chittychat.ChatService/SendMessage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageControllerServer).SendMessage(ctx, req.(*MessagePost))
+		return srv.(ChatServiceServer).SendMessage(ctx, req.(*MessagePost))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// MessageController_ServiceDesc is the grpc.ServiceDesc for MessageController service.
+// ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var MessageController_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "chittychat.MessageController",
-	HandlerType: (*MessageControllerServer)(nil),
+var ChatService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "chittychat.ChatService",
+	HandlerType: (*ChatServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "sendMessage",
-			Handler:    _MessageController_SendMessage_Handler,
+			MethodName: "SendMessage",
+			Handler:    _ChatService_SendMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
