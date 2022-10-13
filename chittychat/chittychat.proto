@@ -2,16 +2,13 @@ syntax = "proto3";
 
 package chittychat;
 
-option go_package = "https://github.com/JonasUJ/dsys-hw3/chittychat;chittychat";
+option go_package = "github.com/JonasUJ/dsys-hw3;chittychat";
 
-service ChatService {
-    rpc SendMessage (MessagePost) returns (MessagePostReply) {}
+service Chat {
+    rpc Connect (stream Message) returns (stream Message);
 }
 
-message MessagePost {
-    string content = 1;
-}
-
-message MessagePostReply {
-    string reply = 1; 
+message Message {
+    uint32 time = 1;
+    string content = 2;
 }
