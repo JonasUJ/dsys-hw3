@@ -1,26 +1,40 @@
 package lamport
 
-type Lamport struct {
-	time int64
-	pid  int32
+import (
+	"github.com/JonasUJ/dsys-hw3/chittychat"
+)
+
+type Lamport interface {
+	GetTime() uint64
+	GetPid() uint32
 }
 
-func (lamport *Lamport) Send() {
-	lamport.time += 1
-}
-
-func (lamport *Lamport) Recv(other *Lamport) {
-	if lamport.Compare(*other) > 0 {
-		lamport.time = other.time + 1
-	} else {
-		lamport.time += 1
+func MakeMessage(lamport Lamport, content string) *chittychat.Message {
+	return &chittychat.Message{
+		Time:    lamport.GetTime(),
+		Pid:     uint32(lamport.GetPid()),
+		Content: content,
 	}
 }
 
-func (lamport Lamport) Compare(other Lamport) int {
-	if lamport.time < other.time || lamport.time == other.time && lamport.pid < other.pid {
+func LamportSend(lamport Lamport) uint64 {
+	return lamport.GetTime() + 1
+}
+
+func LamportRecv(lamport, other Lamport) uint64 {
+	if Compare(lamport, other) > 0 {
+		return lamport.GetTime() + 1
+	} else {
+		return lamport.GetTime() + 1
+	}
+}
+
+func Compare(lamport, other Lamport) int {
+	if lamport.GetTime() < other.GetTime() ||
+		lamport.GetTime() == other.GetTime() &&
+			lamport.GetPid() < other.GetPid() {
 		return -1
-	} else if lamport.pid == other.pid {
+	} else if lamport.GetPid() == other.GetPid() {
 		return 0
 	} else {
 		return 1
