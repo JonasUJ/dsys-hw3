@@ -9,6 +9,7 @@ service Chat {
 }
 
 message Message {
-    uint32 time = 1;
-    string content = 2;
+    uint64 time = 1;
+    uint32 pid = 2;
+    string content = 3;
 }
