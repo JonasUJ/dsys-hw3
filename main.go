@@ -11,21 +11,22 @@ import (
 
 	"github.com/JonasUJ/dsys-hw3/chittychat"
 	"github.com/JonasUJ/dsys-hw3/lamport"
-	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
+	start   = flag.String("start", "client", "Either client or server")
 	name    = flag.String("name", "<no name>", "Name of this participant")
-	port    = flag.String("port", "50050", "Port to listen connect to")
+	port    = flag.String("port", "50050", "Port to connect to")
 	logfile = flag.String("logfile", "", "Log file")
 )
 
 type Client struct {
 	time     uint64
-	pid      uint32
+	pid      uint32 // use pids because we dont care to generate uuids
 	stream   chittychat.Chat_ConnectClient
 	messages []*chittychat.Message
 }
@@ -80,6 +81,12 @@ func main() {
 	log.SetOutput(os.Stderr)
 	log.SetFlags(log.Ltime)
 
+	// Can't have two main functions in the same package
+	if *start == "server" {
+		server()
+		return
+	}
+
 	conn, err := grpc.Dial(net.JoinHostPort("localhost", *port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
@@ -93,14 +100,14 @@ func main() {
 
 	client := &Client{0, uint32(os.Getpid()), stream, []*chittychat.Message{}}
 
-	if err := ui.Init(); err != nil {
+	if err := termui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
-	defer ui.Close()
+	defer termui.Close()
 
 	list := widgets.NewList()
 	list.Title = "Messages"
-	list.TextStyle = ui.NewStyle(ui.ColorYellow)
+	list.TextStyle = termui.NewStyle(termui.ColorYellow)
 	list.WrapText = true
 
 	textBox := widgets.NewTextBox()
@@ -108,8 +115,8 @@ func main() {
 	textBox.Title = "Type message or /help for a list of commands"
 
 	redraw := func() {
-		ui.Render(list)
-		ui.Render(textBox)
+		termui.Render(list)
+		termui.Render(textBox)
 	}
 
 	resize := func(width, height int) {
@@ -117,9 +124,9 @@ func main() {
 		textBox.SetRect(0, height-3, width, height)
 	}
 
-	resize(ui.TerminalDimensions())
+	resize(termui.TerminalDimensions())
 
-	uiEvents := ui.PollEvents()
+	uiEvents := termui.PollEvents()
 
 	chMsgs := make(chan *chittychat.Message)
 	go func() {
@@ -137,14 +144,10 @@ func main() {
 		case e := <-uiEvents:
 			switch e.ID {
 			case "<Resize>":
-				payload := e.Payload.(ui.Resize)
+				payload := e.Payload.(termui.Resize)
 				resize(payload.Width, payload.Height)
 			case "<C-c>":
 				return
-			case "<C-j>":
-				list.ScrollDown()
-			case "<C-k>":
-				list.ScrollUp()
 			case "<Left>":
 				textBox.MoveCursorLeft()
 			case "<Right>":
@@ -166,13 +169,14 @@ func main() {
 					client.Send(text)
 				}
 			default:
-				if ui.ContainsString(ui.PRINTABLE_KEYS, e.ID) {
+				if termui.ContainsString(termui.PRINTABLE_KEYS, e.ID) {
 					textBox.InsertText(e.ID)
 				}
 			}
 		case m := <-chMsgs:
 			client.Recv(m)
 			list.Rows = client.GetRows()
+			list.ScrollBottom()
 		}
 	}
 }
