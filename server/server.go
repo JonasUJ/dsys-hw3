@@ -68,6 +68,36 @@ func launchServer() {
 
 }
 
+/* 
+For an endpoint that does no streaming, then we need to give the method a context and the input type. For the return we need to return a pair of your return type and an error.
+func (s *Server) <endpoint name>(ctx context.Context, <name> *<input type>) (*<the return type>, error) {
+    //some code here
+    ...
+    ack :=  // make an instance of your return type
+    return (ack, nil)
+}
+*/
+
+/*
+For an endpoint that streams messages, then we need to give the method a stream and return an error.
+In this case you get the input from the stream and send the return type back over the stream too. 
+func (s *Server) <endpoint name>(msgStream gRPC.<service name>_<endpoint name>Server) error {
+    for {
+        // get the next message from the stream
+        msg, err := msgStream.Recv()
+        if err == io.EOF {
+            break
+        }
+    }
+
+
+    ack := // make an instance of your return type
+    msgStream.SendAndClose(ack)
+
+    return nil
+}
+*/
+
 // sets the logger to use a log.txt file instead of the console
 func setLog() {
 	// Clears the log.txt file when a new server is started
