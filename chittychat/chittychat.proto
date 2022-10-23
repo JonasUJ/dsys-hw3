@@ -5,14 +5,25 @@ package chittychat;
 option go_package = "https://github.com/JonasUJ/dsys-hw3/chittychat;chittychat";
 
 service ChatService {
-    rpc SendMessage (MessagePost) returns (MessagePostReply) {}
+    rpc SendMessage(stream Message) returns (Ack) {}
+    rpc Connect(Chat) returns (stream Message) {}
+    rpc Disconnect(Chat) returns (stream Message) {}
 }
 
-message MessagePost {
+message Chat {
+    string name = 1;
+    string sender = 2;
+}
+
+message Message {
     string content = 1;
+    string sender = 2;
+    string chat = 3;
+    int64 time = 4;
 }
 
-message MessagePostReply {
-    string reply = 1; 
+message Ack {
+    string ack = 1; 
 }
+
 message Void {}
