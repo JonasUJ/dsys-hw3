@@ -1,32 +1,42 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net"
 
 	"github.com/JonasUJ/dsys-hw3/chittychat"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
 
 type Server struct {
 	chittychat.UnimplementedChatServer
 	clients []*chittychat.Chat_ConnectServer
-	chMsgs chan *chittychat.Message
+	chMsgs  chan *chittychat.Message
 }
 
 func (s *Server) Connect(stream chittychat.Chat_ConnectServer) error {
 	s.clients = append(s.clients, &stream)
 
-	go func() {
+	for {
 		msg, err := stream.Recv()
 		if err != nil {
-			log.Printf("server recv err: %v\n", err)
-			return
-		}
-		s.chMsgs <- msg
-	}()
+			index := slices.Index(s.clients, &stream)
+			s.clients = slices.Delete(s.clients, index, index+1)
 
-	return nil
+			if err == io.EOF {
+				return nil
+			} else {
+				log.Printf("server recv err: %v\n", err)
+				return err
+			}
+		}
+
+		log.Printf("got msg '%s'\n", msg.Content)
+
+		s.chMsgs <- msg
+	}
 }
 
 func server() {
@@ -39,19 +49,21 @@ func server() {
 
 	server := &Server{
 		clients: make([]*chittychat.Chat_ConnectServer, 0),
-		chMsgs: make(chan *chittychat.Message),
+		chMsgs:  make(chan *chittychat.Message),
 	}
 
-	grpcServer := grpc.NewServer()
-	chittychat.RegisterChatServer(grpcServer, server)
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("stopped serving: %v", err)
-	}
+	go func() {
+		grpcServer := grpc.NewServer()
+		chittychat.RegisterChatServer(grpcServer, server)
+		if err := grpcServer.Serve(listener); err != nil {
+			log.Fatalf("stopped serving: %v", err)
+		}
+	}()
 
 	// Recv messages and send them to everyone
-	for {
-		msg := <-server.chMsgs
+	for msg := range server.chMsgs {
 		for _, client := range server.clients {
+			log.Printf("sending '%s'", msg)
 			(*client).Send(msg)
 		}
 	}
