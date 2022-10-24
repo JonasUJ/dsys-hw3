@@ -20,7 +20,7 @@ func (s *Server) Connect(stream chittychat.Chat_ConnectServer) error {
 	go func() {
 		msg, err := stream.Recv()
 		if err != nil {
-			log.Printf("client recv err: %v\n", err)
+			log.Printf("server recv err: %v\n", err)
 			return
 		}
 		s.chMsgs <- msg
