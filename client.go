@@ -79,24 +79,24 @@ func (client *Client) Handle(cmd string) {
 	parts := strings.Split(cmd, " ")
 	switch parts[0] {
 	case "help":
-		client.Log(`Type messages and press enter to send.
+		client.Log(`[Type messages and press enter to send.](fg:magenta)
 Available commands:
-/quit - Gracefully exits the chatroom
-/loss <percent> - Set message loss percent
-/help - Displays this message`)
+/[quit](fg:green) - Gracefully exits the chatroom
+/[loss](fg:green) [<percent>](fg:blue) - Set message loss percent
+/[help](fg:green) - Displays this message`)
 	case "loss":
 		if len(parts) < 2 {
-			client.Log(fmt.Sprintf("Current loss is %d%%", *loss))
+			client.Log(fmt.Sprintf("Current loss is [%d%%](fg:green)", *loss))
 			return
 		}
 
 		amount, err := strconv.Atoi(parts[1])
 		if err != nil {
-			client.Log(fmt.Sprintf("'%s' is not a valid integer", parts[1]))
+			client.Log(fmt.Sprintf("['%s' is not a valid integer](fg:red)", parts[1]))
 			return
 		}
 
-		client.Log(fmt.Sprintf("Changed loss from %d%% to %d%%", *loss, amount))
+		client.Log(fmt.Sprintf("Changed loss from [%d%%](fg:red) to [%d%%](fg:green)", *loss, amount))
 		*loss = amount
 	case "quit":
 		err := client.stream.CloseSend()
@@ -105,7 +105,7 @@ Available commands:
 		}
 		client.events <- &Event{"quit", nil}
 	default:
-		client.Log(fmt.Sprintf("Unknown command '%s'", cmd))
+		client.Log(fmt.Sprintf("[Unknown command '%s'](fg:red)", cmd))
 	}
 }
 
@@ -182,6 +182,7 @@ func client() {
 	list := widgets.NewList()
 	list.Title = "Messages"
 	list.TextStyle = termui.NewStyle(termui.ColorYellow)
+	list.SelectedRowStyle = termui.NewStyle(termui.ColorCyan)
 	list.WrapText = true
 
 	textBox := widgets.NewTextBox()
