@@ -50,7 +50,11 @@ func NewClient(stream chittychat.Chat_ConnectClient) *Client {
 				client.events <- &Event{"quit", nil}
 				return
 			}
-			client.events <- &Event{"msg", msg}
+
+			// Ignore messages from ourself
+			if msg.Pid != client.pid {
+				client.events <- &Event{"msg", msg}
+			}
 		}
 	}()
 
@@ -111,6 +115,8 @@ func (client *Client) Send(msg string) {
 	l.Printf("ticking client time (%d -> %d)", client.time, time)
 	client.time = time
 	msg = fmt.Sprintf("%s> %s", *name, msg)
+
+	client.Log(msg)
 
 	// Check if this message was randomly "lost"
 	if Lost() {
