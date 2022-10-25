@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 )
 
@@ -12,8 +13,14 @@ var (
 	start = flag.String("start", "client", "Entrypoint for the application. Either client or server")
 	name  = flag.String("name", "NoName", "Name of this instance")
 	port  = flag.String("port", "50050", "Port to connect to")
+	loss  = flag.Int("loss", 0, "0-100% chance of message (on send) loss")
 	l     = log.Default()
 )
+
+// Randomly decide to lose messages
+func Lost() bool {
+	return rand.Intn(101) < *loss
+}
 
 func main() {
 	flag.Parse()

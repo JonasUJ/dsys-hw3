@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/JonasUJ/dsys-hw3/chittychat"
@@ -71,12 +72,28 @@ func (client *Client) GetPid() uint32 {
 // Handle user commands typed in the text box.
 // We only really need these because the requirements say clients should be able to quit.
 func (client *Client) Handle(cmd string) {
-	switch cmd {
+	parts := strings.Split(cmd, " ")
+	switch parts[0] {
 	case "help":
 		client.Log(`Type messages and press enter to send.
 Available commands:
 /quit - Gracefully exits the chatroom
+/loss <percent> - Set message loss percent
 /help - Displays this message`)
+	case "loss":
+		if len(parts) < 2 {
+			client.Log(fmt.Sprintf("Current loss is %d%%", *loss))
+			return
+		}
+
+		amount, err := strconv.Atoi(parts[1])
+		if err != nil {
+			client.Log(fmt.Sprintf("'%s' is not a valid integer", parts[1]))
+			return
+		}
+
+		client.Log(fmt.Sprintf("Changed loss from %d%% to %d%%", *loss, amount))
+		*loss = amount
 	case "quit":
 		err := client.stream.CloseSend()
 		if err != nil {
@@ -94,6 +111,12 @@ func (client *Client) Send(msg string) {
 	l.Printf("ticking client time (%d -> %d)", client.time, time)
 	client.time = time
 	msg = fmt.Sprintf("%s> %s", *name, msg)
+
+	// Check if this message was randomly "lost"
+	if Lost() {
+		return
+	}
+
 	client.stream.Send(lamport.MakeMessage(client, msg))
 }
 

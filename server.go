@@ -76,7 +76,7 @@ func server() {
 	server := &Server{
 		clients: make([]*chittychat.Chat_ConnectServer, 0),
 		chMsgs:  make(chan *chittychat.Message),
-		pid: uint32(os.Getpid()),
+		pid:     uint32(os.Getpid()),
 	}
 
 	// The usual gRPC server setup
@@ -97,9 +97,14 @@ func server() {
 		server.time = time
 
 		// Adopt time and pid from server in msg
-		msg = lamport.MakeMessage(server, msg.Content)
+		// msg = lamport.MakeMessage(server, msg.Content)
 
 		for _, client := range server.clients {
+			// Check if this message was randomly "lost"
+			if Lost() {
+				continue
+			}
+
 			(*client).Send(msg)
 		}
 	}
