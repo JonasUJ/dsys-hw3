@@ -57,7 +57,9 @@ func (s *Server) Connect(stream chittychat.Chat_ConnectServer) error {
 		}
 
 		l.Printf("recv '%s'\n", msg)
-		s.time = lamport.LamportRecv(s, msg)
+		time := lamport.LamportRecv(s, msg)
+		l.Printf("ticking server time (%d -> %d)", s.time, time)
+		s.time = time
 
 		s.chMsgs <- msg
 	}
@@ -90,7 +92,9 @@ func server() {
 	// Recv messages and send them to everyone
 	for msg := range server.chMsgs {
 		l.Printf("send '%s'", msg)
-		server.time = lamport.LamportSend(server)
+		time := lamport.LamportSend(server)
+		l.Printf("ticking server time (%d -> %d)", server.time, time)
+		server.time = time
 		for _, client := range server.clients {
 			(*client).Send(msg)
 		}

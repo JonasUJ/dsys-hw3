@@ -90,14 +90,18 @@ Available commands:
 
 // Send handler for messages. Makes sure we remember to increment time.
 func (client *Client) Send(msg string) {
-	client.time = lamport.LamportSend(client)
+	time := lamport.LamportSend(client)
+	l.Printf("ticking client time (%d -> %d)", client.time, time)
+	client.time = time
 	msg = fmt.Sprintf("%s> %s", *name, msg)
 	client.stream.Send(lamport.MakeMessage(client, msg))
 }
 
 // Recv handler for messages. Makes sure we remember to increment time.
 func (client *Client) Recv(msg *chittychat.Message) {
-	client.time = lamport.LamportRecv(client, msg)
+	time := lamport.LamportRecv(client, msg)
+	l.Printf("ticking client time (%d -> %d)", client.time, time)
+	client.time = time
 	client.messages = append(client.messages, msg)
 }
 
