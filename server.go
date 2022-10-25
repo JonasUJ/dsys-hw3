@@ -96,8 +96,12 @@ func server() {
 		l.Printf("ticking server time (%d -> %d)", server.time, time)
 		server.time = time
 
-		// Adopt time and pid from server in msg
-		// msg = lamport.MakeMessage(server, msg.Content)
+		// Adopt time from server in msg.
+		// Uncomment to make sure all messages always appear as the newest message.
+		// This might not be what we want though - if a message had latency, we might want to appear
+		// in the order from its original context.
+		//
+		// msg.time = server.time
 
 		for _, client := range server.clients {
 			// Check if this message was randomly "lost"
