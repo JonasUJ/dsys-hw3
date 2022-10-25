@@ -207,6 +207,7 @@ func client() {
 				}
 			}
 		case e := <-client.events:
+			l.Printf("client event '%s'", e)
 			switch e.ID {
 			case "msg":
 				client.Recv(e.Message)
