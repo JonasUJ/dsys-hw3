@@ -20,6 +20,8 @@ type Server struct {
 	pid     uint32
 }
 
+// -- start Lamport interface --
+
 func (server *Server) GetTime() uint64 {
 	return server.time
 }
@@ -27,6 +29,8 @@ func (server *Server) GetTime() uint64 {
 func (server *Server) GetPid() uint32 {
 	return server.pid
 }
+
+// -- end Lamport interface --
 
 func (s *Server) Connect(stream chittychat.Chat_ConnectServer) error {
 	s.clients = append(s.clients, &stream)
@@ -73,6 +77,7 @@ func server() {
 		pid: uint32(os.Getpid()),
 	}
 
+	// The usual gRPC server setup
 	go func() {
 		grpcServer := grpc.NewServer()
 		chittychat.RegisterChatServer(grpcServer, server)

@@ -32,6 +32,6 @@ func main() {
 		l.SetOutput(file)
 		client()
 	} else {
-		l.Fatalf("start not a valid value '%s' - expected on of 'client' or 'server'", *start)
+		l.Fatalf("start not a valid value '%s' - expected one of 'client' or 'server'", *start)
 	}
 }

@@ -38,12 +38,14 @@ func NewClient(stream chittychat.Chat_ConnectClient) *Client {
 		events:   make(chan *Event, 1),
 	}
 
-	// Recv msgs from server
+	// Recv msgs from server in background
 	go func() {
 		for {
 			msg, err := stream.Recv()
 			if err != nil {
 				l.Println("lost connection to server")
+				// Quit because there's no option to reestablish connection besides running the
+				// process again.
 				client.events <- &Event{"quit", nil}
 				return
 			}
@@ -54,6 +56,8 @@ func NewClient(stream chittychat.Chat_ConnectClient) *Client {
 	return client
 }
 
+// -- start Lamport interface --
+
 func (client *Client) GetTime() uint64 {
 	return client.time
 }
@@ -62,6 +66,10 @@ func (client *Client) GetPid() uint32 {
 	return client.pid
 }
 
+// -- end Lamport interface --
+
+// Handle user commands typed in the text box.
+// We only really need these because the requirements say clients should be able to quit.
 func (client *Client) Handle(cmd string) {
 	switch cmd {
 	case "help":
@@ -80,20 +88,24 @@ Available commands:
 	}
 }
 
+// Send handler for messages. Makes sure we remember to increment time.
 func (client *Client) Send(msg string) {
 	client.time = lamport.LamportSend(client)
 	client.stream.Send(lamport.MakeMessage(client, msg))
 }
 
+// Recv handler for messages. Makes sure we remember to increment time.
 func (client *Client) Recv(msg *chittychat.Message) {
 	client.time = lamport.LamportRecv(client, msg)
 	client.messages = append(client.messages, msg)
 }
 
+// Log a message locally (without sending it to the server)
 func (client *Client) Log(msg string) {
 	client.events <- &Event{"msg", lamport.MakeMessage(client, msg)}
 }
 
+// Get all messages sorted by time in ascending order
 func (client *Client) GetRows() []string {
 	// It would be very easy to optimise this so so much, but I also just don't care.
 	rows := make([]string, len(client.messages))
@@ -139,7 +151,7 @@ func client() {
 	textBox.ShowCursor = true
 	textBox.Title = "Type message or /help for a list of commands"
 
-	// Helper funcs
+	// Helper ui funcs
 	redraw := func() {
 		termui.Render(list)
 		termui.Render(textBox)
@@ -154,6 +166,7 @@ func client() {
 
 	uiEvents := termui.PollEvents()
 
+	// Main loop. Handles user input and displaying new messages from the server.
 	for {
 		redraw()
 
