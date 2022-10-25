@@ -9,6 +9,7 @@ type Lamport interface {
 	GetPid() uint32
 }
 
+// Create a new message with the time and pid of the passed lamport, and the passed content.
 func MakeMessage(lamport Lamport, content string) *chittychat.Message {
 	return &chittychat.Message{
 		Time:    lamport.GetTime(),
@@ -17,10 +18,12 @@ func MakeMessage(lamport Lamport, content string) *chittychat.Message {
 	}
 }
 
+// Calculate new time on a send event.
 func LamportSend(lamport Lamport) uint64 {
 	return lamport.GetTime() + 1
 }
 
+// Calculate new time on a recv event, comparing the two lamports to determine which is greater.
 func LamportRecv(lamport, other Lamport) uint64 {
 	if Compare(lamport, other) > 0 {
 		return lamport.GetTime() + 1
@@ -29,6 +32,7 @@ func LamportRecv(lamport, other Lamport) uint64 {
 	}
 }
 
+// Compare two lamports (according to the spec ofc. ;)
 func Compare(lamport, other Lamport) int {
 	// First compare by time, then by pid
 	if lamport.GetTime() < other.GetTime() ||
