@@ -32,11 +32,10 @@ type Client struct {
 
 func NewClient(stream chittychat.Chat_ConnectClient) *Client {
 	client := &Client{
-		0,
-		uint32(os.Getpid()),
-		stream,
-		[]*chittychat.Message{},
-		make(chan *Event, 1),
+		pid:      uint32(os.Getpid()),
+		stream:   stream,
+		messages: []*chittychat.Message{},
+		events:   make(chan *Event, 1),
 	}
 
 	// Recv msgs from server
@@ -44,6 +43,8 @@ func NewClient(stream chittychat.Chat_ConnectClient) *Client {
 		for {
 			msg, err := stream.Recv()
 			if err != nil {
+				l.Println("lost connection to server")
+				client.events <- &Event{"quit", nil}
 				return
 			}
 			client.events <- &Event{"msg", msg}
