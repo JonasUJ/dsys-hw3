@@ -17,12 +17,40 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type Event struct {
+	ID      string
+	Message *chittychat.Message
+}
+
 type Client struct {
 	time     uint64
 	pid      uint32 // use pids because we dont care to generate uuids
 	stream   chittychat.Chat_ConnectClient
 	messages []*chittychat.Message
-	events   chan string
+	events   chan *Event
+}
+
+func NewClient(stream chittychat.Chat_ConnectClient) *Client {
+	client := &Client{
+		0,
+		uint32(os.Getpid()),
+		stream,
+		[]*chittychat.Message{},
+		make(chan *Event, 1),
+	}
+
+	// Recv msgs from server
+	go func() {
+		for {
+			msg, err := stream.Recv()
+			if err != nil {
+				return
+			}
+			client.events <- &Event{"msg", msg}
+		}
+	}()
+
+	return client
 }
 
 func (client *Client) GetTime() uint64 {
@@ -36,17 +64,16 @@ func (client *Client) GetPid() uint32 {
 func (client *Client) Handle(cmd string) {
 	switch cmd {
 	case "help":
-		client.Log(`
-Type messages and press enter to send.
+		client.Log(`Type messages and press enter to send.
 Available commands:
-	/quit - Gracefully exits the chatroom
-	/help - Displays this message`)
+/quit - Gracefully exits the chatroom
+/help - Displays this message`)
 	case "quit":
 		err := client.stream.CloseSend()
 		if err != nil {
 			l.Fatalf("fail to close stream: %v", err)
 		}
-		client.events <- "quit"
+		client.events <- &Event{"quit", nil}
 	default:
 		client.Log(fmt.Sprintf("Unknown command '%s'", cmd))
 	}
@@ -63,7 +90,7 @@ func (client *Client) Recv(msg *chittychat.Message) {
 }
 
 func (client *Client) Log(msg string) {
-	client.Recv(lamport.MakeMessage(client, msg))
+	client.events <- &Event{"msg", lamport.MakeMessage(client, msg)}
 }
 
 func (client *Client) GetRows() []string {
@@ -94,13 +121,7 @@ func client() {
 		l.Fatalf("fail to connect: %v", err)
 	}
 
-	client := &Client{
-		0,
-		uint32(os.Getpid()),
-		stream,
-		[]*chittychat.Message{},
-		make(chan string, 1),
-	}
+	client := NewClient(stream)
 
 	// Init ui
 	if err := termui.Init(); err != nil {
@@ -131,18 +152,6 @@ func client() {
 	resize(termui.TerminalDimensions())
 
 	uiEvents := termui.PollEvents()
-
-	// Recv msgs from server
-	chMsgs := make(chan *chittychat.Message)
-	go func() {
-		for {
-			msg, err := stream.Recv()
-			if err != nil {
-				return
-			}
-			chMsgs <- msg
-		}
-	}()
 
 	for {
 		redraw()
@@ -178,13 +187,13 @@ func client() {
 					textBox.InsertText(e.ID)
 				}
 			}
-		case m := <-chMsgs:
-			client.Recv(m)
-			list.Rows = client.GetRows()
-			list.ScrollTop()
-			list.ScrollAmount(slices.Index(client.messages, m))
 		case e := <-client.events:
-			switch e {
+			switch e.ID {
+			case "msg":
+				client.Recv(e.Message)
+				list.Rows = client.GetRows()
+				list.ScrollTop()
+				list.ScrollAmount(slices.Index(client.messages, e.Message))
 			case "quit":
 				return
 			}
