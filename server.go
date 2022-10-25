@@ -95,6 +95,10 @@ func server() {
 		time := lamport.LamportSend(server)
 		l.Printf("ticking server time (%d -> %d)", server.time, time)
 		server.time = time
+
+		// Adopt time and pid from server in msg
+		msg = lamport.MakeMessage(server, msg.Content)
+
 		for _, client := range server.clients {
 			(*client).Send(msg)
 		}
