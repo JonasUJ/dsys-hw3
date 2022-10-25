@@ -25,11 +25,12 @@ func LamportRecv(lamport, other Lamport) uint64 {
 	if Compare(lamport, other) > 0 {
 		return lamport.GetTime() + 1
 	} else {
-		return lamport.GetTime() + 1
+		return other.GetTime() + 1
 	}
 }
 
 func Compare(lamport, other Lamport) int {
+	// First compare by time, then by pid
 	if lamport.GetTime() < other.GetTime() ||
 		lamport.GetTime() == other.GetTime() &&
 			lamport.GetPid() < other.GetPid() {

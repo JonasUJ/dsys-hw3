@@ -19,6 +19,14 @@ func main() {
 	log.SetOutput(os.Stderr)
 	log.SetFlags(log.Ltime)
 
+	if *logfile != "" {
+		file, err := os.OpenFile(*logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			log.Fatalf("could not open file %s: %v", *logfile, err)
+		}
+		log.SetOutput(file)
+	}
+
 	// Can't have two main functions in the same package
 	if *start == "server" {
 		server()

@@ -12,6 +12,7 @@ import (
 	"github.com/JonasUJ/dsys-hw3/lamport"
 	"github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -21,6 +22,7 @@ type Client struct {
 	pid      uint32 // use pids because we dont care to generate uuids
 	stream   chittychat.Chat_ConnectClient
 	messages []*chittychat.Message
+	events   chan string
 }
 
 func (client *Client) GetTime() uint64 {
@@ -37,8 +39,9 @@ func (client *Client) Handle(cmd string) {
 	case "quit":
 		err := client.stream.CloseSend()
 		if err != nil {
-			// TODO
+			log.Fatalf("fail to close stream: %v", err)
 		}
+		client.events <- "quit"
 	default:
 
 	}
@@ -52,6 +55,10 @@ func (client *Client) Send(msg string) {
 func (client *Client) Recv(msg *chittychat.Message) {
 	client.time = lamport.LamportRecv(client, msg)
 	client.messages = append(client.messages, msg)
+}
+
+func (client *Client) Log(msg string) {
+	client.Recv(lamport.MakeMessage(client, msg))
 }
 
 func (client *Client) GetRows() []string {
@@ -82,7 +89,13 @@ func client() {
 		log.Fatalf("fail to connect: %v", err)
 	}
 
-	client := &Client{0, uint32(os.Getpid()), stream, []*chittychat.Message{}}
+	client := &Client{
+		0,
+		uint32(os.Getpid()),
+		stream,
+		[]*chittychat.Message{},
+		make(chan string, 1),
+	}
 
 	// Init ui
 	if err := termui.Init(); err != nil {
@@ -117,11 +130,13 @@ func client() {
 	// Recv msgs from server
 	chMsgs := make(chan *chittychat.Message)
 	go func() {
-		msg, err := stream.Recv()
-		if err != nil {
-			return
+		for {
+			msg, err := stream.Recv()
+			if err != nil {
+				return
+			}
+			chMsgs <- msg
 		}
-		chMsgs <- msg
 	}()
 
 	for {
@@ -134,7 +149,7 @@ func client() {
 				payload := e.Payload.(termui.Resize)
 				resize(payload.Width, payload.Height)
 			case "<C-c>":
-				return
+				client.Handle("quit")
 			case "<Left>":
 				textBox.MoveCursorLeft()
 			case "<Right>":
@@ -161,7 +176,13 @@ func client() {
 		case m := <-chMsgs:
 			client.Recv(m)
 			list.Rows = client.GetRows()
-			list.ScrollBottom()
+			list.ScrollTop()
+			list.ScrollAmount(slices.Index(client.messages, m))
+		case e := <-client.events:
+			switch e {
+			case "quit":
+				return
+			}
 		}
 	}
 }
