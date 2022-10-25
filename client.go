@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net"
 	"os"
 	"sort"
@@ -36,14 +36,19 @@ func (client *Client) GetPid() uint32 {
 func (client *Client) Handle(cmd string) {
 	switch cmd {
 	case "help":
+		client.Log(`
+Type messages and press enter to send.
+Available commands:
+	/quit - Gracefully exits the chatroom
+	/help - Displays this message`)
 	case "quit":
 		err := client.stream.CloseSend()
 		if err != nil {
-			log.Fatalf("fail to close stream: %v", err)
+			l.Fatalf("fail to close stream: %v", err)
 		}
 		client.events <- "quit"
 	default:
-
+		client.Log(fmt.Sprintf("Unknown command '%s'", cmd))
 	}
 }
 
@@ -79,14 +84,14 @@ func client() {
 	// Connect to server
 	conn, err := grpc.Dial(net.JoinHostPort("localhost", *port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
+		l.Fatalf("fail to dial: %v", err)
 	}
 
 	// Init client
 	chatclient := chittychat.NewChatClient(conn)
 	stream, err := chatclient.Connect(context.Background())
 	if err != nil {
-		log.Fatalf("fail to connect: %v", err)
+		l.Fatalf("fail to connect: %v", err)
 	}
 
 	client := &Client{
@@ -99,7 +104,7 @@ func client() {
 
 	// Init ui
 	if err := termui.Init(); err != nil {
-		log.Fatalf("failed to initialize termui: %v", err)
+		l.Fatalf("failed to initialize termui: %v", err)
 	}
 	defer termui.Close()
 
