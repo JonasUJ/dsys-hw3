@@ -114,16 +114,19 @@ func (client *Client) Send(msg string) {
 	time := lamport.LamportSend(client)
 	l.Printf("ticking client time (%d -> %d)", client.time, time)
 	client.time = time
-	msg = fmt.Sprintf("%s> %s", *name, msg)
 
-	client.Log(msg)
+	// Cool colors for our own message :)
+	ownMsg := fmt.Sprintf("[%s>](fg:green) %s", *name, msg)
+	sendMsg := fmt.Sprintf("[%s>](fg:blue) %s", *name, msg)
+
+	client.Log(ownMsg)
 
 	// Check if this message was randomly "lost"
 	if Lost() {
 		return
 	}
 
-	client.stream.Send(lamport.MakeMessage(client, msg))
+	client.stream.Send(lamport.MakeMessage(client, sendMsg))
 }
 
 // Recv handler for messages. Makes sure we remember to increment time.
