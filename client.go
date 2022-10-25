@@ -91,6 +91,7 @@ Available commands:
 // Send handler for messages. Makes sure we remember to increment time.
 func (client *Client) Send(msg string) {
 	client.time = lamport.LamportSend(client)
+	msg = fmt.Sprintf("%s> %s", *name, msg)
 	client.stream.Send(lamport.MakeMessage(client, msg))
 }
 
