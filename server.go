@@ -8,16 +8,21 @@ import (
 
 	"github.com/JonasUJ/dsys-hw3/chittychat"
 	"github.com/JonasUJ/dsys-hw3/lamport"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
 
+type ClientConnection struct {
+	stream chittychat.Chat_ConnectServer
+	pid    uint32
+	name   string
+}
+
 type Server struct {
 	chittychat.UnimplementedChatServer
-	clients []*chittychat.Chat_ConnectServer
-	chMsgs  chan *chittychat.Message
-	time    uint64
-	pid     uint32
+	connections map[uint32]*ClientConnection
+	chMsgs      chan *chittychat.Message
+	time        uint64
+	pid         uint32
 }
 
 // -- start Lamport interface --
@@ -33,22 +38,34 @@ func (server *Server) GetPid() uint32 {
 // -- end Lamport interface --
 
 func (s *Server) Connect(stream chittychat.Chat_ConnectServer) error {
-	s.clients = append(s.clients, &stream)
+	// Part of our connection protocol is that the client tells us their name
+	msg, err := stream.Recv()
+	if err != nil {
+		return nil
+	}
 
-	l.Println("new client connection")
+	conn := &ClientConnection{
+		stream: stream,
+		pid:    msg.Pid,
+		name:   msg.Content,
+	}
+	s.connections[conn.pid] = conn
+
+	l.Printf("new client connection from %s", conn.name)
 	// Send message to client to let them sync time
-	stream.Send(lamport.MakeMessage(s, fmt.Sprintf("Welcome to the %s server", *name)))
+	stream.Send(lamport.MakeMessage(s, fmt.Sprintf("Welcome to the [%s](fg:blue) server [%s](fg:green)", *name, conn.name)))
+
+	s.chMsgs <- lamport.MakeMessage(s, fmt.Sprintf("%s joined the server", conn.name))
 
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
 			// Client stream closed: Forget stream.
-			index := slices.Index(s.clients, &stream)
-			s.clients = slices.Delete(s.clients, index, index+1)
+			delete(s.connections, conn.pid)
 
 			if err == io.EOF {
 				// Connection closed gracefully
-				s.chMsgs <- lamport.MakeMessage(s, "A client left the server")
+				s.chMsgs <- lamport.MakeMessage(s, fmt.Sprintf("%s left the server", conn.name))
 				return nil
 			} else {
 				l.Printf("server recv err: %v\n", err)
@@ -74,9 +91,9 @@ func server() {
 	defer listener.Close()
 
 	server := &Server{
-		clients: make([]*chittychat.Chat_ConnectServer, 0),
-		chMsgs:  make(chan *chittychat.Message),
-		pid:     uint32(os.Getpid()),
+		connections: make(map[uint32]*ClientConnection),
+		chMsgs:      make(chan *chittychat.Message),
+		pid:         uint32(os.Getpid()),
 	}
 
 	// The usual gRPC server setup
@@ -103,13 +120,13 @@ func server() {
 		//
 		// msg.time = server.time
 
-		for _, client := range server.clients {
+		for _, client := range server.connections {
 			// Check if this message was randomly "lost"
 			if Lost() {
 				continue
 			}
 
-			(*client).Send(msg)
+			client.stream.Send(msg)
 		}
 	}
 }

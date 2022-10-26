@@ -173,6 +173,10 @@ func client() {
 
 	client := NewClient(stream)
 
+	// Tell server our name so that it can tell everyone else
+	client.time = lamport.LamportSend(client)
+	client.stream.Send(lamport.MakeMessage(client, *name))
+
 	// Init ui
 	if err := termui.Init(); err != nil {
 		l.Fatalf("failed to initialize termui: %v", err)
