@@ -5,3 +5,5 @@
 [Patricks template](https://github.com/PatrickMatthiesen/DSYS-gRPC-template?fbclid=IwAR0y0YMbvnV2-i4VJLp42TIWzvUjW8Wvc0xXUlQ48noSyfJBvtowhSk3o2Y)
 
 [Nadjas template](https://github.com/NaddiNadja/grpc101/)
+
+check out [https://github.com/thecodeteam/goodbye]
