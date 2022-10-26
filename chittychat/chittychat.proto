@@ -18,8 +18,8 @@ message Chat {
 message Message {
     string content = 1;
     string sender = 2;
-    string chat = 3;
-    int64 time = 4;
+    Chat chat = 3;
+    int64 lamportTimeCounter = 4;
 }
 
 message Ack {
