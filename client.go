@@ -83,6 +83,7 @@ func (client *Client) Handle(cmd string) {
 Available commands:
 /[quit](fg:green) - Gracefully exits the chatroom
 /[loss](fg:green) [<percent>](fg:blue) - Set message loss percent
+/[clear](fg:green) - Forgets all messages
 /[help](fg:green) - Displays this message`)
 	case "loss":
 		if len(parts) < 2 {
@@ -98,6 +99,9 @@ Available commands:
 
 		client.Log(fmt.Sprintf("Changed loss from [%d%%](fg:red) to [%d%%](fg:green)", *loss, amount))
 		*loss = amount
+	case "clear":
+		client.messages = []*chittychat.Message{}
+		client.events <- &Event{"clear", nil}
 	case "quit":
 		err := client.stream.CloseSend()
 		if err != nil {
@@ -251,6 +255,8 @@ func client() {
 				list.Rows = client.GetRows()
 				list.ScrollTop()
 				list.ScrollAmount(slices.Index(client.messages, e.Message))
+			case "clear":
+				list.Rows = client.GetRows()
 			case "quit":
 				return
 			}
