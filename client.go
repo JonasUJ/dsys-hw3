@@ -83,6 +83,7 @@ func (client *Client) Handle(cmd string) {
 Available commands:
 /[quit](fg:green) - Gracefully exits the chatroom
 /[loss](fg:green) [<percent>](fg:blue) - Set message loss percent
+/[delay](fg:green) [<seconds>](fg:blue) - Set message delay in seconds
 /[clear](fg:green) - Forgets all messages
 /[help](fg:green) - Displays this message`)
 	case "loss":
@@ -99,6 +100,20 @@ Available commands:
 
 		client.Log(fmt.Sprintf("Changed loss from [%d%%](fg:red) to [%d%%](fg:green)", *loss, amount))
 		*loss = amount
+	case "delay":
+		if len(parts) < 2 {
+			client.Log(fmt.Sprintf("Current delay is [%ds](fg:green)", *delay))
+			return
+		}
+
+		amount, err := strconv.Atoi(parts[1])
+		if err != nil {
+			client.Log(fmt.Sprintf("['%s' is not a valid integer](fg:red)", parts[1]))
+			return
+		}
+
+		client.Log(fmt.Sprintf("Changed delay from [%ds](fg:red) to [%ds](fg:green)", *delay, amount))
+		*delay = amount
 	case "clear":
 		client.messages = []*chittychat.Message{}
 		client.events <- &Event{"clear", nil}
@@ -126,11 +141,12 @@ func (client *Client) Send(msg string) {
 	client.Log(ownMsg)
 
 	// Check if this message was randomly "lost"
-	if Lost() {
-		return
+	if !Lost() {
+		msg := lamport.MakeMessage(client, sendMsg)
+		Delay(func() {
+			client.stream.Send(msg)
+		})
 	}
-
-	client.stream.Send(lamport.MakeMessage(client, sendMsg))
 }
 
 // Recv handler for messages. Makes sure we remember to increment time.

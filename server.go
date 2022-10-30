@@ -122,11 +122,14 @@ func server() {
 
 		for _, client := range server.connections {
 			// Check if this message was randomly "lost"
-			if Lost() {
-				continue
+			if !Lost() {
+				// Clone to avoid the pointers pointing elsewhere once the delay ends
+				c := *client
+				m := &*msg
+				Delay(func() {
+					c.stream.Send(m)
+				})
 			}
-
-			client.stream.Send(msg)
 		}
 	}
 }

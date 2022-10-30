@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 )
 
 var (
@@ -14,12 +15,17 @@ var (
 	name  = flag.String("name", "NoName", "Name of this instance")
 	port  = flag.String("port", "50050", "Port to connect to")
 	loss  = flag.Int("loss", 0, "0-100% chance of message (on send) loss")
+	delay = flag.Int("delay", 0, "Delay in seconds between a message being registered and the same message being sent")
 	l     = log.Default()
 )
 
 // Randomly decide to lose messages
 func Lost() bool {
 	return rand.Intn(101) < *loss
+}
+
+func Delay(f func()) {
+	time.AfterFunc(time.Duration(*delay * int(time.Second)), f)
 }
 
 func main() {
