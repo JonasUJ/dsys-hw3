@@ -5,6 +5,8 @@ Distrubuted Systems Homework #3
 ```
 $ go run . -help
 Usage of dsys-hw3:
+  -delay int
+        Delay in seconds between a message being registered and the same message being sent
   -loss int
         0-100% chance of message (on send) loss
   -name string
@@ -37,14 +39,14 @@ Each client opens as a neat TUI.
 Type messages that are previewed at the bottom and press enter to send.
 Alternatively, type /help and get a very short list of client commands.
 Both /quit and Ctrl-c can be used to quit the client gracefully, letting the server, and hence everyone else, know that you are no longer taking part in the conversation.
-The latest message is highlighted in cyan.
+The latest message, in terms of wall time, is highlighted in cyan, while the latest message by lamport timestamp is at the bottom of the messages list.
 
 The TUI library used, [termui](https://github.com/gizak/termui), is very representative of the golang ecosystem in that it is not heavily maintained and essential features, like textboxes, have to be found in WIP (read: abandoned) side branches 🙃.
 This means: Don't try to send empty messages or the lib will crash. Also, some characters like "[" cannot be typed.
 
 ## Inspecting it
 
-Logs for the server is written to standard out **and** to a file `<name>.log`, where `<name>` is the name passed in the `-name` flag.
+Logs for the server is written to stdout **and** to a file `<name>.log`, where `<name>` is the name passed in the `-name` flag.
 
 Logs for the clients are written to a file `<name>.log`, where `<name>` is the name passed in the `-name` flag.
 
